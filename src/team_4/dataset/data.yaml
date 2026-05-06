@@ -1,0 +1,16 @@
+# /home/robotics/team_4/dataset/data.yaml
+
+# 你的数据集根目录
+path: /home/robotics/team_4/dataset
+
+# 训练与验证数据的位置 (相对于 path)
+train: train/images
+val: val/images
+
+# 类别数量和名称 
+nc: 4
+names:
+  0: greencube
+  1: bluecube
+  2: redcube
+  3: cola

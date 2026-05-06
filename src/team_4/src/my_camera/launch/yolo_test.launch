@@ -1,0 +1,36 @@
+<launch>
+  <!-- ========== 参数配置 ========== -->
+  <arg name="video_dev" default="/dev/usb_cam" />
+  <arg name="arm_name" default="sgr532" />
+  <arg name="photo_pose_x" default="0.20" />
+  <arg name="photo_pose_y" default="0.00" />
+  <arg name="photo_pose_z" default="0.16" />
+  <arg name="photo_pitch" default="1.55" />
+  <arg name="model_path" default="$(env HOME)/team_4/runs/train/yolov8_custom/weights/best.pt" />
+  <arg name="conf_thres" default="0.5" />
+  <arg name="show_window" default="true" />
+
+  <!-- ========== 1. 启动 USB 相机 ========== -->
+  <include file="$(find sagittarius_object_color_detector)/launch/usb_cam.launch">
+    <arg name="video_dev" value="$(arg video_dev)" />
+  </include>
+
+  <!-- ========== 2. 启动机械臂底层驱动 + MoveIt ========== -->
+  <include file="$(find sagittarius_moveit)/launch/demo_true.launch" />
+
+  <!-- ========== 3. 启动 Action Server ========== -->
+  <node pkg="sagittarius_object_color_detector" type="sgr_ctrl.py" name="sgr_ctrl_node" output="screen" ns="$(arg arm_name)" />
+
+  <!-- ========== 4. YOLO 检测节点（先移动再检测） ========== -->
+  <node name="yolotest" pkg="my_camera" type="yolotest.py" output="screen" launch-prefix="bash -c 'sleep 3; $0 $@'">
+    <param name="arm_name" value="$(arg arm_name)" />
+    <param name="photo_x" value="$(arg photo_pose_x)" />
+    <param name="photo_y" value="$(arg photo_pose_y)" />
+    <param name="photo_z" value="$(arg photo_pose_z)" />
+    <param name="photo_pitch" value="$(arg photo_pitch)" />
+    <param name="model_path" value="$(arg model_path)" />
+    <param name="conf_thres" value="$(arg conf_thres)" />
+    <param name="show_window" value="$(arg show_window)" />
+  </node>
+
+</launch>

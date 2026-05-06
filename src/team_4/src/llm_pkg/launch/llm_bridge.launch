@@ -1,0 +1,28 @@
+<launch>
+  <!-- 参数配置 -->
+  <arg name="llm_ip" default="10.31.171.185"/>
+  <arg name="llm_port" default="8910"/>
+  <arg name="model_name" default="Phi-3.5-mini"/>
+  <arg name="output_dir" default="$(env HOME)/arm_commands"/>
+  <arg name="output_topic" default="/arm/command"/>
+  <arg name="input_topic" default="/arm/user_command"/>
+  <arg name="timeout" default="30"/>
+  
+  <!-- 启动节点 -->
+  <node 
+    pkg="llm_pkg" 
+    type="llm_controller.py" 
+    name="llm_controller" 
+    output="screen"
+    respawn="false"
+    clear_params="true"
+  >
+    <param name="llm_ip" value="$(arg llm_ip)"/>
+    <param name="llm_port" value="$(arg llm_port)"/>
+    <param name="model_name" value="$(arg model_name)"/>
+    <param name="output_dir" value="$(arg output_dir)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="input_topic" value="$(arg input_topic)"/>
+    <param name="llm_timeout" value="$(arg timeout)"/>
+  </node>
+</launch>

@@ -1,0 +1,35 @@
+<launch>
+  <!-- ========== 参数配置 ========== -->
+  <arg name="video_dev" default="/dev/usb_cam" />
+  <arg name="arm_name" default="sgr532" />
+  <arg name="photo_pose_x" default="0.20" />
+  <arg name="photo_pose_y" default="0.00" />
+  <arg name="photo_pose_z" default="0.16" />
+  <arg name="photo_pitch" default="1.55" />
+  <arg name="save_dir" default="/home/robotics/team_4/dataset/train/images" /> 
+
+  <!-- ========== 1. 启动 USB 相机 ========== -->
+  <include file="$(find sagittarius_object_color_detector)/launch/usb_cam.launch">
+    <arg name="video_dev" value="$(arg video_dev)" />
+  </include>
+
+  <!-- ========== 2. 可选：HSV参数节点（如需调参可保留） ========== -->
+  <!-- <node name="HSVParams_node" pkg="sagittarius_object_color_detector" type="HSVParams_node" output="screen" /> -->
+
+  <!-- ========== 3. 启动机械臂底层驱动 + MoveIt ========== -->
+  <include file="$(find sagittarius_moveit)/launch/demo_true.launch" />
+
+  <!-- ========== 4. 启动 Action Server（提供 /sgr532/sgr_ctrl 服务） ========== -->
+  <node pkg="sagittarius_object_color_detector" type="sgr_ctrl.py" name="sgr_ctrl_node" output="screen" ns="$(arg arm_name)" />
+
+  <!-- ========== 5. 拍照节点（自动归位并拍照，然后退出） ========== -->
+  <node name="train_fixed_photo_capture" pkg="my_camera" type="train_fixed_position_photo.py" output="screen" launch-prefix="bash -c 'sleep 3; $0 $@'">
+    <param name="arm_name" value="$(arg arm_name)" />
+    <param name="photo_x" value="$(arg photo_pose_x)" />
+    <param name="photo_y" value="$(arg photo_pose_y)" />
+    <param name="photo_z" value="$(arg photo_pose_z)" />
+    <param name="photo_pitch" value="$(arg photo_pitch)" />
+    <param name="save_dir" value="$(arg save_dir)" />
+  </node>
+
+</launch>

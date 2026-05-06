@@ -1,0 +1,33 @@
+<launch>
+  <!-- 机械臂控制 -->
+  <arg name="robot_name" default="sgr532"/>
+  <include file="$(find sagittarius_moveit)/launch/demo_true.launch" />
+  <node pkg="sagittarius_object_color_detector" type="sgr_ctrl.py" name="sgr_ctrl_node" output="screen" ns="$(arg robot_name)"/>
+
+  <!-- 摄像头 -->
+  <arg name="video_dev" default="/dev/usb_cam" />
+  <include file="$(find sagittarius_object_color_detector)/launch/usb_cam.launch">
+    <arg name="video_dev" value="$(arg video_dev)"/>
+  </include>
+
+  <!-- YOLO 抓取节点 -->
+  <arg name="model_path" default="$(env HOME)/team_4/runs/train/yolov8_custom/weights/best.pt" />
+  <arg name="vision_config" default="$(find sagittarius_object_color_detector)/config/vision_config.yaml" />
+
+  <node pkg="my_camera" type="yolograsp.py" name="yolograsp" output="screen">
+    <param name="model_path" value="$(arg model_path)" />
+    <param name="vision_config" value="$(arg vision_config)" />
+    <param name="conf_thres" value="0.6" />
+    <param name="stable_frames" value="5" />
+    <param name="position_threshold" value="15" />
+    <!-- 抓取与放置参数（可根据需要调整） -->
+    <param name="pick_z" value="0.02" />
+    <param name="pick_pitch" value="1.57" />
+    <param name="put_z" value="0.2" />
+    <!-- 拍照位姿（与标定时用的搜索位姿一致） -->
+    <param name="search_x" value="0.20" />
+    <param name="search_y" value="0.00" />
+    <param name="search_z" value="0.16" />
+    <param name="search_pitch" value="1.55" />
+  </node>
+</launch>

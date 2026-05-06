@@ -1,0 +1,51 @@
+<launch>
+  <!-- ========== 全局参数配置 ========== -->
+  <arg name="arm_name" default="sgr532" />
+  <arg name="video_dev" default="/dev/usb_cam" />
+  <arg name="llm_ip" default="10.31.171.185" />
+  <arg name="llm_port" default="8910" />
+  <arg name="model_name" default="Phi-3.5-mini" />
+  <arg name="model_path" default="$(env HOME)/team_4/runs/train/yolov8_custom/weights/best.pt" />
+  <arg name="vision_config" default="$(find sagittarius_object_color_detector)/config/vision_config.yaml" />
+
+  <!-- ========== 1. 机械臂底层驱动 + MoveIt ========== -->
+  <include file="$(find sagittarius_moveit)/launch/demo_true.launch" />
+
+  <!-- ========== 2. USB 相机 ========== -->
+  <include file="$(find sagittarius_object_color_detector)/launch/usb_cam.launch">
+    <arg name="video_dev" value="$(arg video_dev)" />
+  </include>
+
+  <!-- ========== 3. Action Server（供机械臂控制） ========== -->
+  <node pkg="sagittarius_object_color_detector" type="sgr_ctrl.py" name="sgr_ctrl_node" output="screen" ns="$(arg arm_name)" />
+
+  <!-- ========== 4. LLM 桥接节点 ========== -->
+  <node pkg="llm_pkg" type="llm_controller.py" name="llm_controller" output="screen" launch-prefix="bash -c 'sleep 2; $0 $@'">
+    <param name="llm_ip" value="$(arg llm_ip)" />
+    <param name="llm_port" value="$(arg llm_port)" />
+    <param name="model_name" value="$(arg model_name)" />
+    <param name="output_topic" value="/arm/command" />
+    <param name="input_topic" value="/arm/user_command" />
+  </node>
+
+  <!-- ========== 5. 视觉执行节点（接收 /arm/command，筛选绿色，发布 /grasp_target） ========== -->
+  <node pkg="arm_vision_executor" type="vision_executor.py" name="vision_executor" output="screen" launch-prefix="bash -c 'sleep 3; $0 $@'" />
+
+  <!-- ========== 6. YOLO 抓取节点（订阅 /grasp_target，执行抓取） ========== -->
+  <node pkg="my_camera" type="yolograsp.py" name="yolograsp" output="screen" launch-prefix="bash -c 'sleep 4; $0 $@'">
+    <param name="arm_name" value="$(arg arm_name)" />
+    <param name="model_path" value="$(arg model_path)" />
+    <param name="vision_config" value="$(arg vision_config)" />
+    <param name="conf_thres" value="0.6" />
+    <param name="stable_frames" value="5" />
+    <param name="position_threshold" value="15" />
+    <param name="pick_z" value="0.02" />
+    <param name="pick_pitch" value="1.57" />
+    <param name="put_z" value="0.2" />
+    <param name="search_x" value="0.20" />
+    <param name="search_y" value="0.00" />
+    <param name="search_z" value="0.16" />
+    <param name="search_pitch" value="1.55" />
+  </node>
+
+</launch>
